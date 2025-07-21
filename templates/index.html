@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix Movie Recommender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #e50914;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b3b3b3;
+            margin-bottom: 30px;
+        }
+
+        .search-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .movie-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .movie-input:focus {
+            outline: none;
+            border-color: #e50914;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .movie-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .rec-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #e50914, #f40612);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .rec-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
+        }
+
+        .rec-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e50914;
+            display: block;
+        }
+
+        .stat-label {
+            color: #b3b3b3;
+            margin-top: 5px;
+        }
+
+        .results-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .results-header {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #e50914;
+        }
+
+        .results-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .movie-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #e50914;
+            transition: all 0.3s ease;
+            animation: slideInUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .movie-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .movie-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            background: rgba(229, 9, 20, 0.2);
+            padding: 4px 10px;
+            border-radius: 15px;
+            color: #ffcccb;
+        }
+
+        .movie-description {
+            color: #b3b3b3;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .similarity-score {
+            font-size: 0.9rem;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .loading, .no-results, .error {
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            color: #e50914;
+        }
+
+        .error {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 10px;
+        }
+
+        .no-results {
+            color: #b3b3b3;
+        }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(229, 9, 20, 0.3);
+            border-radius: 50%;
+            border-top-color: #e50914;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .movie-input {
+                min-width: auto;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">NETFLIX RECOMMENDER</div>
+            <div class="subtitle">Discover your next binge-worthy show or movie</div>
+        </header>
+
+        <div class="search-section">
+            <div class="input-group">
+                <input type="text" id="movie-input" class="movie-input" placeholder="Enter a Netflix title you enjoyed..." />
+                <button id="rec-btn" class="rec-btn">Get Recommendations</button>
+            </div>
+        </div>
+
+        <div class="stats-section" id="stats-section">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <div class="results-section">
+            <div class="results-header">Recommendations</div>
+            <div id="results" class="results-list">
+                <div class="no-results">Enter a movie or TV show title above to get personalized recommendations</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NetflixRecommender {
+            constructor() {
+                this.recBtn = document.getElementById('rec-btn');
+                this.movieInput = document.getElementById('movie-input');
+                this.results = document.getElementById('results');
+                this.statsSection = document.getElementById('stats-section');
+                this.isLoading = false;
+                
+                this.init();
+            }
+
+            init() {
+                if (!this.recBtn || !this.movieInput || !this.results) {
+                    console.error('Required elements not found');
+                    return;
+                }
+                
+                this.recBtn.addEventListener('click', () => this.handleRecommendation());
+                this.movieInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleRecommendation();
+                });
+                
+                this.movieInput.addEventListener('input', () => this.clearResults());
+                this.loadStats();
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/stats');
+                    const stats = await response.json();
+                    this.displayStats(stats);
+                } catch (error) {
+                    console.error('Failed to load stats:', error);
+                }
+            }
+
+            displayStats(stats) {
+                const statsHtml = `
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.total_titles || 0}</span>
+                        <div class="stat-label">Total Titles</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.content_types?.Movie || 0}</span>
+                        <div class="stat-label">Movies</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.content_types?.['TV Show'] || 0}</span>
+                        <div class="stat-label">TV Shows</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.clusters || 0}</span>
+                        <div class="stat-label">Content Clusters</div>
+                    </div>
+                `;
+                this.statsSection.innerHTML = statsHtml;
+            }
+
+            async handleRecommendation() {
+                const title = this.getInputValue();
+                if (!title || this.isLoading) return;
+                
+                try {
+                    this.setLoadingState(true);
+                    const recommendations = await this.fetchRecommendations(title);
+                    this.displayResults(recommendations);
+                } catch (error) {
+                    this.handleError(error);
+                } finally {
+                    this.setLoadingState(false);
+                }
+            }
+
+            getInputValue() {
+                return this.movieInput.value.trim();
+            }
+
+            async fetchRecommendations(title) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                try {
+                    const response = await fetch('/recommend', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ title, count: 8 }),
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
+                }
+            }
+
+            setLoadingState(loading) {
+                this.isLoading = loading;
+                this.recBtn.disabled = loading;
+                this.movieInput.disabled = loading;
+                
+                if (loading) {
+                    this.recBtn.innerHTML = '<span class="loading-spinner"></span>Finding...';
+                    this.results.innerHTML = '<div class="loading"><span class="loading-spinner"></span>Analyzing Netflix catalog...</div>';
+                } else {
+                    this.recBtn.textContent = 'Get Recommendations';
+                }
+            }
+
+            displayResults(data) {
+                const { recommendations, query } = data;
+                
+                if (!recommendations || recommendations.length === 0) {
+                    this.results.innerHTML = `
+                        <div class="no-results">
+                            No recommendations found for "${query}". <br>
+                            Try searching for titles like "Midnight Mass", "Blood & Water", or "Kota Factory"
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const resultsHtml = recommendations.map((movie, index) => `
+                    <div class="movie-card" style="animation-delay: ${index * 0.1}s">
+                        <div class="movie-title">${this.escapeHtml(movie.title)}</div>
+                        <div class="movie-meta">
+                            <span class="meta-item">${movie.type}</span>
+                            ${movie.year ? `<span class="meta-item">${movie.year}</span>` : ''}
+                            ${movie.rating ? `<span class="meta-item">${movie.rating}</span>` : ''}
+                            ${movie.duration ? `<span class="meta-item">${movie.duration}</span>` : ''}
+                            ${movie.genre ? `<span class="meta-item">${movie.genre}</span>` : ''}
+                        </div>
+                        ${movie.director ? `<div style="color: #ccc; margin-bottom: 8px;"><strong>Director:</strong> ${movie.director}</div>` : ''}
+                        ${movie.country ? `<div style="color: #ccc; margin-bottom: 8px;"><strong>Country:</strong> ${movie.country}</div>` : ''}
+                        <div class="movie-description">${this.escapeHtml(movie.description)}</div>
+                        <div class="similarity-score">Match: ${Math.round(movie.similarity * 100)}%</div>
+                    </div>
+                `).join('');
+                
+                this.results.innerHTML = resultsHtml;
+            }
+
+            handleError(error) {
+                console.error('Recommendation error:', error);
+                
+                let errorMessage = 'Unable to fetch recommendations. ';
+                
+                if (error.name === 'AbortError') {
+                    errorMessage += 'Request timed out.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage += 'Network error - check your connection.';
+                } else if (error.message.includes('HTTP 404')) {
+                    errorMessage += 'Service not available.';
+                } else if (error.message.includes('HTTP 500')) {
+                    errorMessage += 'Server error - try again later.';
+                } else {
+                    errorMessage += 'Please try again.';
+                }
+                
+                this.results.innerHTML = `<div class="error">❌ ${errorMessage}</div>`;
+            }
+
+            clearResults() {
+                if (this.results.innerHTML && !this.isLoading) {
+                    this.results.innerHTML = '<div class="no-results">Enter a movie or TV show title above to get personalized recommendations</div>';
+                }
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text || '';
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.netflixRecommender = new NetflixRecommender();
+        });
+    </script>
+</body>
+</html>
